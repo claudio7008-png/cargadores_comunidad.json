@@ -1,0 +1,107 @@
+[
+  {
+    "id": "cba-1",
+    "nombre": "YPF Punto Eléctrico - Av. Capdevila y Circunvalación",
+    "latitud": -31.3785,
+    "longitud": -64.1352,
+    "tipoConector": "CCS2 / CHAdeMO / Type 2 (50kW Carga Rápida)",
+    "origen": "Red YPF"
+  },
+  {
+    "id": "cba-2",
+    "nombre": "YPF Punto Eléctrico - Av. Ejército Argentino (Valle Escondido)",
+    "latitud": -31.3768,
+    "longitud": -64.2690,
+    "tipoConector": "CCS2 / CHAdeMO / Type 2 (50kW Carga Rápida)",
+    "origen": "Red YPF"
+  },
+  {
+    "id": "cba-3",
+    "nombre": "Punto E EPEC - Paseo del Buen Pastor (Centro)",
+    "latitud": -31.4233,
+    "longitud": -64.1878,
+    "tipoConector": "Type 2 (22kW)",
+    "origen": "Red EPEC"
+  },
+  {
+    "id": "cba-4",
+    "nombre": "Punto E EPEC - Parque del Chateau",
+    "latitud": -31.3725,
+    "longitud": -64.2541,
+    "tipoConector": "Type 2 (25kW)",
+    "origen": "Red EPEC"
+  },
+  {
+    "id": "cba-5",
+    "nombre": "EPEC / Scame - Blvd. Mitre",
+    "latitud": -31.4111,
+    "longitud": -64.1795,
+    "tipoConector": "Type 2 AC (Gratuito)",
+    "origen": "EPEC / Scame"
+  },
+  {
+    "id": "cba-6",
+    "nombre": "Chargebox Net - Hotel Sheraton Córdoba",
+    "latitud": -31.4135,
+    "longitud": -64.1951,
+    "tipoConector": "Type 2 (22kW)",
+    "origen": "Chargebox Net"
+  },
+  {
+    "id": "cba-7",
+    "nombre": "DS Store Córdoba - Av. Colón",
+    "latitud": -31.3985,
+    "longitud": -64.2251,
+    "tipoConector": "Type 2 (7kW)",
+    "origen": "DS / Privado"
+  },
+  {
+    "id": "cba-8",
+    "nombre": "EPEC Punto E - Villa Carlos Paz (Costanera)",
+    "latitud": -31.4172,
+    "longitud": -64.4988,
+    "tipoConector": "Type 2 (22kW)",
+    "origen": "Red EPEC"
+  },
+  {
+    "id": "cba-9",
+    "nombre": "YPF Punto Eléctrico - Villa María",
+    "latitud": -32.4075,
+    "longitud": -63.2402,
+    "tipoConector": "CCS2 / CHAdeMO (50kW)",
+    "origen": "Red YPF"
+  },
+  {
+    "id": "cba-10",
+    "nombre": "EPEC Punto E - Río Ceballos (Ruta E53)",
+    "latitud": -31.1645,
+    "longitud": -64.3168,
+    "tipoConector": "Type 2 (22kW)",
+    "origen": "Red EPEC"
+  },
+  {
+    "id": "cba-11",
+    "nombre": "Punto de Carga - Hotel Yacanto (Valle de Calamuchita)",
+    "latitud": -31.9560,
+    "longitud": -65.0450,
+    "tipoConector": "Type 2 (22kW)",
+    "origen": "Comunidad"
+  },
+  {
+    "id": "cba-12",
+    "nombre": "Punto E EPEC - San Francisco",
+    "latitud": -31.4278,
+    "longitud": -62.0825,
+    "tipoConector": "Type 2 (22kW)",
+    "origen": "Red EPEC"
+  }
+][
+  {
+    "id": "user-1789151188021",
+    "nombre": "La Banda Carga ",
+    "latitud": -27.593521,
+    "longitud": -64.278414,
+    "tipoConector": "Combo",
+    "origen": "Aporte Comunidad (Guardado Local)"
+  }
+]
