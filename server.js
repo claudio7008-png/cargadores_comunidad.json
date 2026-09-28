@@ -8,6 +8,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// --- AGREGAR DESDE ACÁ ---
+app.use(express.static(__dirname));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 const ARCHIVO_COMUNIDAD = path.join(__dirname, 'estaciones_comunidad.json');
 
 function leerEstacionesGuardadas() {
