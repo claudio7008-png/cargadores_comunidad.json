@@ -75,7 +75,7 @@
 
         .panel-form.open {
             padding: 15px;
-            max-height: 500px; /* Permite desplegar el contenido suavemente */
+            max-height: 500px;
         }
 
         .form-group { margin-bottom: 10px; }
@@ -245,8 +245,15 @@
             capasMarcadores.push({ latitud: estacion.latitud, longitud: estacion.longitud, layer: marker });
         }
 
+        // Función con DOBLE CONFIRMACIÓN para eliminar la estación
         async function eliminarEstacion(latitud, longitud) {
-            if (!confirm("¿Estás seguro de que deseas borrar esta estación?")) return;
+            // Primera confirmación
+            const primeraConfirmacion = confirm("¿Deseas eliminar esta estación?");
+            if (!primeraConfirmacion) return;
+
+            // Segunda confirmación (alerta de seguridad)
+            const segundaConfirmacion = confirm("⚠️ ¿CONFIRMAR BORRADO DE ESTACIÓN? Esta acción no se puede deshacer.");
+            if (!segundaConfirmacion) return;
 
             try {
                 const response = await fetch('/api/estaciones', {
@@ -293,7 +300,6 @@
             document.getElementById('latitud').value = e.latlng.lat.toFixed(6);
             document.getElementById('longitud').value = e.latlng.lng.toFixed(6);
             
-            // Abre automáticamente el formulario si está cerrado
             if (!formPanel.classList.contains('open')) {
                 formPanel.classList.add('open');
                 arrow.innerText = '▲';
@@ -324,7 +330,6 @@
                     listaEstaciones.push(nuevaEstacion);
                     document.getElementById('formEstacion').reset();
                     
-                    // Colapsa el formulario al terminar
                     formPanel.classList.remove('open');
                     arrow.innerText = '▼';
                 } else {
