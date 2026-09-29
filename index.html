@@ -12,21 +12,90 @@
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
         }
+        
+        /* El mapa ocupa el 80% del alto de la pantalla */
         #map {
-            height: 65vh;
-            min-height: 350px;
+            height: 80vh;
+            min-height: 400px;
             width: 100%;
             background-color: #e5e3df;
         }
-        .container { padding: 15px; }
+
+        .container { 
+            padding: 10px 15px; 
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .info-panel { 
+            background: #ffffff; 
+            padding: 12px; 
+            border-radius: 8px; 
+            margin-bottom: 10px; 
+            display: none; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Botón estilo acordeón para desplegar el formulario */
+        .accordion-btn {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            padding: 12px 15px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            transition: background-color 0.2s ease;
+        }
+
+        .accordion-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* Panel colapsable del formulario (oculto por defecto) */
+        .panel-form {
+            padding: 0 15px;
+            background-color: white;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .panel-form.open {
+            padding: 15px;
+            max-height: 500px; /* Permite desplegar el contenido suavemente */
+        }
+
         .form-group { margin-bottom: 10px; }
-        label { display: block; margin-bottom: 5px; }
-        input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; }
-        button[type="submit"] { background-color: #007bff; color: white; border: none; padding: 10px 15px; cursor: pointer; width: 100%; margin-top: 5px; }
-        button[type="submit"]:hover { background-color: #0056b3; }
-        .info-panel { background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 10px; display: none; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         
+        button[type="submit"] { 
+            background-color: #28a745; 
+            color: white; 
+            border: none; 
+            padding: 10px 15px; 
+            cursor: pointer; 
+            width: 100%; 
+            margin-top: 5px; 
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        button[type="submit"]:hover { background-color: #218838; }
+
         /* Marcador de ubicación del usuario */
         .user-location-marker {
             background-color: #007bff;
@@ -35,7 +104,7 @@
             box-shadow: 0 0 5px rgba(0,0,0,0.5);
         }
 
-        /* Estilo para el botón flotante dentro del mapa */
+        /* Botón GPS integrado dentro del mapa */
         .leaflet-control-gps-btn {
             background-color: white;
             border: 2px solid rgba(0,0,0,0.2);
@@ -55,6 +124,22 @@
             background-color: #f4f4f4;
             border-color: #bbb;
         }
+
+        /* Botón de borrar dentro del popup */
+        .btn-borrar {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: 8px;
+            width: 100%;
+            font-size: 12px;
+        }
+        .btn-borrar:hover {
+            background-color: #bd2130;
+        }
     </style>
 </head>
 <body>
@@ -62,38 +147,46 @@
     <div id="map"></div>
 
     <div class="container">
-        <!-- Panel para mostrar los datos de la estación más cercana cuando se use el GPS -->
+        <!-- Panel de información de la estación más cercana al usar GPS -->
         <div id="info-cercana" class="info-panel">
-            <h3>Estación más cercana:</h3>
+            <h3 style="margin-top:0;">Estación más cercana:</h3>
             <p id="cercana-nombre"></p>
             <p id="cercana-distancia"></p>
             <p id="cercana-tiempo"></p>
         </div>
 
-        <h3>Agregar nueva estación</h3>
-        <form id="formEstacion">
-            <div class="form-group">
-                <label for="nombre">Nombre de la Estación:</label>
-                <input type="text" id="nombre" required placeholder="Ej: Cargador Shell YPF">
-            </div>
+        <!-- Botón Desplegable -->
+        <button id="btnToggleForm" class="accordion-btn">
+            <span>➕ Agregar nueva estación</span>
+            <span id="arrow">▼</span>
+        </button>
 
-            <div class="form-group">
-                <label for="latitud">Latitud:</label>
-                <input type="text" id="latitud" placeholder="Clic en el mapa" readonly required>
-            </div>
+        <!-- Formulario Colapsable -->
+        <div id="formPanel" class="panel-form">
+            <form id="formEstacion">
+                <div class="form-group">
+                    <label for="nombre">Nombre de la Estación:</label>
+                    <input type="text" id="nombre" required placeholder="Ej: Cargador Shell YPF">
+                </div>
 
-            <div class="form-group">
-                <label for="longitud">Longitud:</label>
-                <input type="text" id="longitud" placeholder="Clic en el mapa" readonly required>
-            </div>
+                <div class="form-group">
+                    <label for="latitud">Latitud:</label>
+                    <input type="text" id="latitud" placeholder="Clic en el mapa" readonly required>
+                </div>
 
-            <div class="form-group">
-                <label for="tipoConector">Tipo de Conector:</label>
-                <input type="text" id="tipoConector" placeholder="Ej: Type 2 / CCS2 / Estándar">
-            </div>
+                <div class="form-group">
+                    <label for="longitud">Longitud:</label>
+                    <input type="text" id="longitud" placeholder="Clic en el mapa" readonly required>
+                </div>
 
-            <button type="submit">Guardar Estación</button>
-        </form>
+                <div class="form-group">
+                    <label for="tipoConector">Tipo de Conector:</label>
+                    <input type="text" id="tipoConector" placeholder="Ej: Type 2 / CCS2 / Estándar">
+                </div>
+
+                <button type="submit">Guardar Estación</button>
+            </form>
+        </div>
     </div>
 
     <!-- Leaflet JS -->
@@ -113,6 +206,21 @@
         let accuracyCircle = null;
         let routeLayer = null;
         let listaEstaciones = [];
+        let capasMarcadores = [];
+
+        // Lógica para desplegar / colapsar el formulario
+        const btnToggleForm = document.getElementById('btnToggleForm');
+        const formPanel = document.getElementById('formPanel');
+        const arrow = document.getElementById('arrow');
+
+        btnToggleForm.addEventListener('click', function() {
+            formPanel.classList.toggle('open');
+            if (formPanel.classList.contains('open')) {
+                arrow.innerText = '▲';
+            } else {
+                arrow.innerText = '▼';
+            }
+        });
 
         function calcularDistanciaDirecta(lat1, lon1, lat2, lon2) {
             const R = 6371;
@@ -124,7 +232,47 @@
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
-        // Cargar las estaciones desde nuestro servidor
+        function agregarMarcadorMapa(estacion) {
+            const marker = L.marker([estacion.latitud, estacion.longitud]).addTo(map);
+            
+            const contenidoPopup = `
+                <b>${estacion.nombre}</b><br>
+                <strong>Conector:</strong> ${estacion.tipoConector || 'No especificado'}<br>
+                <button class="btn-borrar" onclick="eliminarEstacion(${estacion.latitud}, ${estacion.longitud})">🗑️ Borrar estación</button>
+            `;
+            
+            marker.bindPopup(contenidoPopup);
+            capasMarcadores.push({ latitud: estacion.latitud, longitud: estacion.longitud, layer: marker });
+        }
+
+        async function eliminarEstacion(latitud, longitud) {
+            if (!confirm("¿Estás seguro de que deseas borrar esta estación?")) return;
+
+            try {
+                const response = await fetch('/api/estaciones', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ latitud, longitud })
+                });
+
+                if (response.ok) {
+                    alert("Estación eliminada con éxito.");
+
+                    const indice = capasMarcadores.findIndex(m => m.latitud === latitud && m.longitud === longitud);
+                    if (indice !== -1) {
+                        map.removeLayer(capasMarcadores[indice].layer);
+                        capasMarcadores.splice(indice, 1);
+                    }
+
+                    listaEstaciones = listaEstaciones.filter(e => !(e.latitud === latitud && e.longitud === longitud));
+                } else {
+                    alert("Error al intentar eliminar la estación.");
+                }
+            } catch (error) {
+                console.error("Error conectando con el servidor:", error);
+            }
+        }
+
         async function cargarEstaciones() {
             try {
                 const response = await fetch('/api/estaciones');
@@ -132,13 +280,7 @@
 
                 listaEstaciones.forEach(estacion => {
                     if (estacion.latitud && estacion.longitud) {
-                        L.marker([estacion.latitud, estacion.longitud])
-                            .addTo(map)
-                            .bindPopup(`
-                                <b>${estacion.nombre}</b><br>
-                                <strong>Conector:</strong> ${estacion.tipoConector || 'No especificado'}<br>
-                                <strong>Origen:</strong> ${estacion.origen || 'Comunidad'}
-                            `);
+                        agregarMarcadorMapa(estacion);
                     }
                 });
             } catch (error) {
@@ -146,10 +288,16 @@
             }
         }
 
-        // Capturar clics para el formulario
+        // Al hacer clic en el mapa, abre el formulario y autocompleta latitud/longitud
         map.on('click', function(e) {
             document.getElementById('latitud').value = e.latlng.lat.toFixed(6);
             document.getElementById('longitud').value = e.latlng.lng.toFixed(6);
+            
+            // Abre automáticamente el formulario si está cerrado
+            if (!formPanel.classList.contains('open')) {
+                formPanel.classList.add('open');
+                arrow.innerText = '▲';
+            }
         });
 
         // Guardar nueva estación
@@ -172,13 +320,13 @@
 
                 if (response.ok) {
                     alert("¡Estación guardada exitosamente!");
-                    L.marker([nuevaEstacion.latitud, nuevaEstacion.longitud])
-                        .addTo(map)
-                        .bindPopup(`<b>${nuevaEstacion.nombre}</b><br><strong>Conector:</strong> ${nuevaEstacion.tipoConector}`)
-                        .openPopup();
-                    
+                    agregarMarcadorMapa(nuevaEstacion);
                     listaEstaciones.push(nuevaEstacion);
                     document.getElementById('formEstacion').reset();
+                    
+                    // Colapsa el formulario al terminar
+                    formPanel.classList.remove('open');
+                    arrow.innerText = '▼';
                 } else {
                     alert("Error al guardar la estación.");
                 }
@@ -187,7 +335,7 @@
             }
         });
 
-        // TRAZADO DE RUTA POR CALLES VIA OSRM
+        // Trazado de ruta OSRM
         async function trazarRutaCalles(userLat, userLng, destinoLat, destinoLng) {
             const url = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destinoLng},${destinoLat}?overview=full&geometries=geojson`;
 
@@ -203,21 +351,10 @@
                     if (routeLayer) map.removeLayer(routeLayer);
 
                     routeLayer = L.geoJSON(ruta.geometry, {
-                        style: {
-                            color: '#007bff',
-                            weight: 5,
-                            opacity: 0.8
-                        }
+                        style: { color: '#007bff', weight: 5, opacity: 0.8 }
                     }).addTo(map);
 
-                    let textoTiempo = "";
-                    if (tiempoMins < 60) {
-                        textoTiempo = `${tiempoMins} min en auto`;
-                    } else {
-                        const horas = Math.floor(tiempoMins / 60);
-                        const minsRestantes = tiempoMins % 60;
-                        textoTiempo = `${horas}h ${minsRestantes}m en auto`;
-                    }
+                    let textoTiempo = tiempoMins < 60 ? `${tiempoMins} min en auto` : `${Math.floor(tiempoMins / 60)}h ${tiempoMins % 60}m en auto`;
 
                     document.getElementById('cercana-distancia').innerText = `📍 Distancia por calles: ${distanciaKm} km`;
                     document.getElementById('cercana-tiempo').innerText = `🚗 Tiempo estimado: ${textoTiempo}`;
@@ -227,7 +364,7 @@
             }
         }
 
-        // GEOLOCALIZACIÓN Y BÚSQUEDA AL HACER CLIC EN EL BOTÓN FLOTANTE
+        // Geolocalización
         function ubicarUsuario() {
             if (!navigator.geolocation) {
                 alert("Tu navegador no soporta geolocalización.");
@@ -244,16 +381,10 @@
                     if (accuracyCircle) map.removeLayer(accuracyCircle);
 
                     accuracyCircle = L.circle([userLat, userLng], {
-                        radius: precision,
-                        color: '#007bff',
-                        fillColor: '#007bff',
-                        fillOpacity: 0.15
+                        radius: precision, color: '#007bff', fillColor: '#007bff', fillOpacity: 0.15
                     }).addTo(map);
 
-                    const userIcon = L.divIcon({
-                        className: 'user-location-marker',
-                        iconSize: [16, 16]
-                    });
+                    const userIcon = L.divIcon({ className: 'user-location-marker', iconSize: [16, 16] });
 
                     userMarker = L.marker([userLat, userLng], { icon: userIcon })
                         .addTo(map)
@@ -262,7 +393,6 @@
 
                     map.flyTo([userLat, userLng], 13, { animate: true, duration: 1.5 });
 
-                    // BUSCAR LA ESTACIÓN MÁS CERCANA
                     if (listaEstaciones.length > 0) {
                         let estacionMasCercana = null;
                         let menorDistancia = Infinity;
@@ -280,28 +410,24 @@
                         if (estacionMasCercana) {
                             document.getElementById('cercana-nombre').innerHTML = `<b>${estacionMasCercana.nombre}</b>`;
                             document.getElementById('info-cercana').style.display = 'block';
-
                             await trazarRutaCalles(userLat, userLng, estacionMasCercana.latitud, estacionMasCercana.longitud);
                         }
                     }
                 },
-                (error) => {
-                    alert("No se pudo obtener tu ubicación.");
-                },
+                () => { alert("No se pudo obtener tu ubicación."); },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
 
-        // --- CREAR EL BOTÓN FLOTANTE INTEGRADO DENTRO DEL MAPA ---
+        // Botón GPS Flotante
         const GpsControl = L.Control.extend({
-            options: { position: 'topleft' }, // Aparece arriba a la izquierda, debajo del zoom
+            options: { position: 'topleft' },
             onAdd: function (map) {
                 const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
                 const button = L.DomUtil.create('a', 'leaflet-control-gps-btn', container);
-                
                 button.innerHTML = '🎯';
                 button.href = '#';
-                button.title = 'Buscar estación más cercana'; // Leyenda flotante al pasar el cursor
+                button.title = 'Buscar estación más cercana';
 
                 L.DomEvent.disableClickPropagation(button);
                 L.DomEvent.on(button, 'click', function (e) {
@@ -313,10 +439,7 @@
             }
         });
 
-        // Agregar el control al mapa
         map.addControl(new GpsControl());
-
-        // Cargar estaciones al inicio (sin pedir ubicación automáticamente)
         cargarEstaciones();
     </script>
 </body>
