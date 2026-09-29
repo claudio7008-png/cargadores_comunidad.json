@@ -3,182 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa de Cargadores EV Argentina</title>
-
+    <title>Mapa de Cargadores EV</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            display: flex;
-            height: 100vh;
-        }
-
-        #map {
-            flex: 3;
-            height: 100%;
-            position: relative;
-        }
-
-        #sidebar {
-            flex: 1;
-            padding: 20px;
-            background-color: #f8f9fa;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
-        }
-
-        h2 {
-            margin-top: 0;
-            color: #333;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        label {
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        input, select, button {
-            padding: 10px;
-            font-size: 14px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        button {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.3s;
-        }
-
-        button:hover {
-            background-color: #218838;
-        }
-
-        /* Botón de Geolocalización Flotante sobre el Mapa */
-        .btn-gps {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            background-color: white;
-            border: 2px solid rgba(0,0,0,0.2);
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            transition: background 0.2s, transform 0.2s;
-        }
-
-        .btn-gps:hover {
-            background-color: #f4f4f4;
-            transform: scale(1.05);
-        }
-
-        /* Cartel "LOCALIZAR ESTACIÓN" al pasar el mouse */
-        .btn-gps::after {
-            content: "LOCALIZAR ESTACIÓN";
-            position: absolute;
-            right: 55px;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: #333;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.2s ease, visibility 0.2s ease;
-            pointer-events: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        .btn-gps:hover::after {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Tarjeta Flotante con la Estación más Cercana */
-        #info-cercana {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            z-index: 1000;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-            max-width: 320px;
-            display: none;
-            border-left: 5px solid #007bff;
-        }
-
-        #info-cercana h4 {
-            margin: 0 0 8px 0;
-            color: #007bff;
-            font-size: 15px;
-        }
-
-        #info-cercana p {
-            margin: 4px 0;
-            font-size: 13px;
-            color: #444;
-        }
-
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        #map { height: 70vh; width: 100%; }
+        .container { padding: 15px; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; margin-bottom: 5px; }
+        input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 15px; cursor: pointer; width: 100%; margin-top: 5px; }
+        button:hover { background-color: #0056b3; }
+        .info-panel { background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 10px; display: none; }
         .user-location-marker {
             background-color: #007bff;
-            border: 3px solid white;
+            border: 2px solid white;
             border-radius: 50%;
-            box-shadow: 0 0 10px rgba(0,123,255,0.8);
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
         }
     </style>
 </head>
 <body>
 
-    <div id="map">
-        <!-- Botón flotante GPS -->
-        <button id="btnGps" class="btn-gps" title="LOCALIZAR ESTACIÓN">🎯</button>
+    <div id="map"></div>
 
-        <!-- Tarjeta de información de estación cercana -->
-        <div id="info-cercana">
-            <h4>⚡ Estación más cercana</h4>
-            <p id="cercana-nombre"><b>Buscando ruta...</b></p>
-            <p id="cercana-distancia">📍 Distancia por calles: -</p>
-            <p id="cercana-tiempo">🚗 Tiempo en auto: -</p>
+    <div class="container">
+        <button id="btnGps">📍 Ubicarme y buscar estación más cercana</button>
+
+        <div id="info-cercana" class="info-panel">
+            <h3>Estación más cercana:</h3>
+            <p id="cercana-nombre"></p>
+            <p id="cercana-distancia"></p>
+            <p id="cercana-tiempo"></p>
         </div>
-    </div>
 
-    <div id="sidebar">
-        <h2>Cargadores EV Argentina</h2>
-        <p>Haz clic en el mapa para cargar las coordenadas de una nueva estación de carga.</p>
-
+        <h3>Agregar nueva estación</h3>
         <form id="formEstacion">
             <div class="form-group">
-                <label for="nombre">Nombre de la estación / Lugar:</label>
-                <input type="text" id="nombre" placeholder="Ej: YPF Punto Eléctrico - Centro" required>
+                <label for="nombre">Nombre de la Estación:</label>
+                <input type="text" id="nombre" required placeholder="Ej: Cargador Shell YPF">
             </div>
 
             <div class="form-group">
@@ -213,10 +77,9 @@
 
         let userMarker = null;
         let accuracyCircle = null;
-        let routeLayer = null; // Capa para dibujar la línea de la ruta
+        let routeLayer = null;
         let listaEstaciones = [];
 
-        // Distancia aproximada previa en línea recta
         function calcularDistanciaDirecta(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -227,10 +90,10 @@
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
-        // Cargar las estaciones desde nuestro servidor
+        // Cargar las estaciones desde nuestro servidor (Ruta relativa /api/estaciones)
         async function cargarEstaciones() {
             try {
-                const response = await fetch('http://localhost:3000/api/estaciones');
+                const response = await fetch('/api/estaciones');
                 listaEstaciones = await response.json();
 
                 listaEstaciones.forEach(estacion => {
@@ -255,7 +118,7 @@
             document.getElementById('longitud').value = e.latlng.lng.toFixed(6);
         });
 
-        // Guardar nueva estación
+        // Guardar nueva estación (Ruta relativa /api/estaciones)
         document.getElementById('formEstacion').addEventListener('submit', async function(e) {
             e.preventDefault();
 
@@ -267,7 +130,7 @@
             };
 
             try {
-                const response = await fetch('http://localhost:3000/api/estaciones', {
+                const response = await fetch('/api/estaciones', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(nuevaEstacion)
@@ -292,7 +155,6 @@
 
         // TRAZADO DE RUTA POR CALLES VIA OSRM
         async function trazarRutaCalles(userLat, userLng, destinoLat, destinoLng) {
-            // URL de OSRM en formato: longitud,latitud;longitud,latitud
             const url = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destinoLng},${destinoLat}?overview=full&geometries=geojson`;
 
             try {
@@ -301,13 +163,11 @@
 
                 if (data.routes && data.routes.length > 0) {
                     const ruta = data.routes[0];
-                    const distanciaKm = (ruta.distance / 1000).toFixed(2); // Convertir metros a km
-                    const tiempoMins = Math.round(ruta.duration / 60);     // Convertir segundos a min
+                    const distanciaKm = (ruta.distance / 1000).toFixed(2);
+                    const tiempoMins = Math.round(ruta.duration / 60);
 
-                    // Si ya existía una ruta trazada anteriormente, la borramos
                     if (routeLayer) map.removeLayer(routeLayer);
 
-                    // Dibujar la línea de ruta en el mapa (GeoJSON)
                     routeLayer = L.geoJSON(ruta.geometry, {
                         style: {
                             color: '#007bff',
@@ -316,7 +176,6 @@
                         }
                     }).addTo(map);
 
-                    // Formatear texto de tiempo
                     let textoTiempo = "";
                     if (tiempoMins < 60) {
                         textoTiempo = `${tiempoMins} min en auto`;
@@ -326,7 +185,6 @@
                         textoTiempo = `${horas}h ${minsRestantes}m en auto`;
                     }
 
-                    // Actualizar panel de información
                     document.getElementById('cercana-distancia').innerText = `📍 Distancia por calles: ${distanciaKm} km`;
                     document.getElementById('cercana-tiempo').innerText = `🚗 Tiempo estimado: ${textoTiempo}`;
                 }
@@ -389,7 +247,6 @@
                             document.getElementById('cercana-nombre').innerHTML = `<b>${estacionMasCercana.nombre}</b>`;
                             document.getElementById('info-cercana').style.display = 'block';
 
-                            // Trazar la ruta por calles y calcular distancia/tiempo reales
                             await trazarRutaCalles(userLat, userLng, estacionMasCercana.latitud, estacionMasCercana.longitud);
                         }
                     }
