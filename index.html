@@ -2,13 +2,23 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mapa de Cargadores EV</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
-        #map { height: 70vh; width: 100%; }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            height: 60vh;
+            min-height: 350px;
+            width: 100%;
+            background-color: #e5e3df; /* Fondo por defecto mientras carga */
+        }
         .container { padding: 15px; }
         .form-group { margin-bottom: 10px; }
         label { display: block; margin-bottom: 5px; }
@@ -70,10 +80,16 @@
     <script>
         const map = L.map('map').setView([-38.416097, -63.616672], 5);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        // Usamos OpenStreetMap oficial con servidor seguro HTTPS
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: '&copy; OpenStreetMap &copy; CARTO'
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
+
+        // Forzar recalculo de dimensiones del mapa para pantallas móviles
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 500);
 
         let userMarker = null;
         let accuracyCircle = null;
@@ -90,7 +106,7 @@
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
-        // Cargar las estaciones desde nuestro servidor (Ruta relativa /api/estaciones)
+        // Cargar las estaciones desde nuestro servidor
         async function cargarEstaciones() {
             try {
                 const response = await fetch('/api/estaciones');
@@ -118,7 +134,7 @@
             document.getElementById('longitud').value = e.latlng.lng.toFixed(6);
         });
 
-        // Guardar nueva estación (Ruta relativa /api/estaciones)
+        // Guardar nueva estación
         document.getElementById('formEstacion').addEventListener('submit', async function(e) {
             e.preventDefault();
 
