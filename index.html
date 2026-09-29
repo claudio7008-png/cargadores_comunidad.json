@@ -14,23 +14,46 @@
             font-family: Arial, sans-serif;
         }
         #map {
-            height: 60vh;
+            height: 65vh;
             min-height: 350px;
             width: 100%;
-            background-color: #e5e3df; /* Fondo por defecto mientras carga */
+            background-color: #e5e3df;
         }
         .container { padding: 15px; }
         .form-group { margin-bottom: 10px; }
         label { display: block; margin-bottom: 5px; }
         input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; }
-        button { background-color: #007bff; color: white; border: none; padding: 10px 15px; cursor: pointer; width: 100%; margin-top: 5px; }
-        button:hover { background-color: #0056b3; }
+        button[type="submit"] { background-color: #007bff; color: white; border: none; padding: 10px 15px; cursor: pointer; width: 100%; margin-top: 5px; }
+        button[type="submit"]:hover { background-color: #0056b3; }
         .info-panel { background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 10px; display: none; }
+        
+        /* Marcador de ubicación del usuario */
         .user-location-marker {
             background-color: #007bff;
             border: 2px solid white;
             border-radius: 50%;
             box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        /* Estilo para el botón flotante dentro del mapa */
+        .leaflet-control-gps-btn {
+            background-color: white;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 4px;
+            width: 34px;
+            height: 34px;
+            line-height: 30px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .leaflet-control-gps-btn:hover {
+            background-color: #f4f4f4;
+            border-color: #bbb;
         }
     </style>
 </head>
@@ -39,8 +62,7 @@
     <div id="map"></div>
 
     <div class="container">
-        <button id="btnGps">📍 Ubicarme y buscar estación más cercana</button>
-
+        <!-- Panel para mostrar los datos de la estación más cercana cuando se use el GPS -->
         <div id="info-cercana" class="info-panel">
             <h3>Estación más cercana:</h3>
             <p id="cercana-nombre"></p>
@@ -80,16 +102,12 @@
     <script>
         const map = L.map('map').setView([-38.416097, -63.616672], 5);
 
-        // Usamos OpenStreetMap oficial con servidor seguro HTTPS
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
 
-        // Forzar recalculo de dimensiones del mapa para pantallas móviles
-        setTimeout(() => {
-            map.invalidateSize();
-        }, 500);
+        setTimeout(() => { map.invalidateSize(); }, 500);
 
         let userMarker = null;
         let accuracyCircle = null;
@@ -209,7 +227,7 @@
             }
         }
 
-        // GEOLOCALIZACIÓN Y BÚSQUEDA
+        // GEOLOCALIZACIÓN Y BÚSQUEDA AL HACER CLIC EN EL BOTÓN FLOTANTE
         function ubicarUsuario() {
             if (!navigator.geolocation) {
                 alert("Tu navegador no soporta geolocalización.");
@@ -274,7 +292,31 @@
             );
         }
 
-        document.getElementById('btnGps').addEventListener('click', ubicarUsuario);
+        // --- CREAR EL BOTÓN FLOTANTE INTEGRADO DENTRO DEL MAPA ---
+        const GpsControl = L.Control.extend({
+            options: { position: 'topleft' }, // Aparece arriba a la izquierda, debajo del zoom
+            onAdd: function (map) {
+                const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                const button = L.DomUtil.create('a', 'leaflet-control-gps-btn', container);
+                
+                button.innerHTML = '🎯';
+                button.href = '#';
+                button.title = 'Buscar estación más cercana'; // Leyenda flotante al pasar el cursor
+
+                L.DomEvent.disableClickPropagation(button);
+                L.DomEvent.on(button, 'click', function (e) {
+                    L.DomEvent.preventDefault(e);
+                    ubicarUsuario();
+                });
+
+                return container;
+            }
+        });
+
+        // Agregar el control al mapa
+        map.addControl(new GpsControl());
+
+        // Cargar estaciones al inicio (sin pedir ubicación automáticamente)
         cargarEstaciones();
     </script>
 </body>
