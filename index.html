@@ -16,41 +16,83 @@
             overflow: hidden;
         }
         
-        /* El mapa ocupa el 100% de la pantalla */
         #map {
             height: 100vh;
             width: 100vw;
             background-color: #e5e3df;
         }
 
-        /* Botón Flotante Principal: BUSCAR ESTACIÓN CERCANA */
-        .btn-buscar-flotante {
+        /* Contenedor Flotante con Tooltip / Menú para Buscar Estación */
+        .contenedor-buscar-flotante {
             position: absolute;
             bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 20px;
             z-index: 1000;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Botón Circular con Icono 🎯 */
+        .btn-buscar-flotante {
             background-color: #10B981;
             color: white;
-            font-size: 15px;
-            font-weight: bold;
-            padding: 14px 24px;
+            font-size: 22px;
+            width: 50px;
+            height: 50px;
             border: none;
-            border-radius: 30px;
+            border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             display: flex;
             align-items: center;
-            gap: 8px;
-            white-space: nowrap;
+            justify-content: center;
+            transition: transform 0.2s, background-color 0.2s;
         }
 
         .btn-buscar-flotante:active {
             background-color: #059669;
-            transform: translateX(-50%) scale(0.97);
+            transform: scale(0.95);
         }
 
-        /* Tarjeta de información emergente arriba */
+        /* Etiqueta / Menú desplegable al pasar el cursor o presionar */
+        .tooltip-buscar {
+            position: absolute;
+            left: 62px;
+            background-color: #111827;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: bold;
+            padding: 8px 14px;
+            border-radius: 8px;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+            transform: translateX(-10px);
+            pointer-events: none;
+        }
+
+        /* Flechita apuntando al botón */
+        .tooltip-buscar::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 100%;
+            transform: translateY(-50%);
+            border-width: 6px;
+            border-style: solid;
+            border-color: transparent #111827 transparent transparent;
+        }
+
+        /* Mostrar etiqueta en hover o active */
+        .contenedor-buscar-flotante:hover .tooltip-buscar,
+        .contenedor-buscar-flotante:active .tooltip-buscar {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
         .card-info {
             position: absolute;
             top: 20px;
@@ -69,7 +111,6 @@
         .card-info h4 { margin: 0 0 4px 0; color: #10B981; }
         .card-info p { margin: 2px 0; font-size: 13px; color: #333; }
 
-        /* Botón flotante para desplegar formulario (+) */
         .btn-agregar-flotante {
             position: absolute;
             top: 20px;
@@ -89,7 +130,6 @@
             justify-content: center;
         }
 
-        /* Modal / Formulario Flotante */
         .modal-form {
             position: absolute;
             bottom: 90px;
@@ -136,14 +176,6 @@
             cursor: pointer;
         }
 
-        /* Estilos del marcador del usuario */
-        .user-location-marker {
-            background-color: #007bff;
-            border: 2px solid white;
-            border-radius: 50%;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
-        }
-
         .btn-borrar {
             background-color: #dc3545;
             color: white;
@@ -161,22 +193,22 @@
 
     <div id="map"></div>
 
-    <!-- Botón Principal: BUSCAR ESTACIÓN CERCANA -->
-    <button id="btnBuscarEstacion" class="btn-buscar-flotante">
-        ⚡ BUSCAR ESTACIÓN CERCANA
-    </button>
+    <!-- Botón Circular Flotante 🎯 con Menú Desplegable -->
+    <div class="contenedor-buscar-flotante">
+        <button id="btnBuscarEstacion" class="btn-buscar-flotante" aria-label="Buscar estación cercana">
+            🎯
+        </button>
+        <span class="tooltip-buscar">BUSCAR ESTACIÓN CERCANA</span>
+    </div>
 
-    <!-- Tarjeta informativa de la ruta trazada -->
     <div id="cardInfo" class="card-info">
         <h4 id="infoNombre">Estación Encontrada</h4>
         <p id="infoDistancia">📍 Distancia por calles: --</p>
         <p id="infoTiempo">🚗 Tiempo estimado: --</p>
     </div>
 
-    <!-- Botón flotante (+) -->
     <button id="btnAbrirForm" class="btn-agregar-flotante" title="Agregar Estación">+</button>
 
-    <!-- Modal para Cargar Nueva Estación -->
     <div id="modalForm" class="modal-form">
         <button id="btnCerrarForm" class="btn-cerrar-modal">✕</button>
         <h4 style="margin-top:0;">Nueva Estación</h4>
@@ -209,15 +241,81 @@
         let userLat = null;
         let userLng = null;
 
-     
-      // 4. RASTREO GPS DINÁMICO CON ÍCONO DE AUTITO
+        // 1. CARGAR ESTACIONES DESDE EL BACKEND
+        async function cargarEstaciones() {
+            try {
+                const response = await fetch('/api/estaciones');
+                if (!response.ok) throw new Error("Error en la respuesta del servidor");
+                
+                listaEstaciones = await response.json();
+
+                listaEstaciones.forEach(estacion => {
+                    const lat = parseFloat(estacion.latitud);
+                    const lng = parseFloat(estacion.longitud);
+
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        agregarMarcadorMapa(estacion);
+                    }
+                });
+            } catch (error) {
+                console.error("Error al cargar estaciones desde /api/estaciones:", error);
+            }
+        }
+
+        // 2. MOSTRAR MARCADORES EN EL MAPA
+        function agregarMarcadorMapa(estacion) {
+            const lat = parseFloat(estacion.latitud);
+            const lng = parseFloat(estacion.longitud);
+
+            const marker = L.marker([lat, lng]).addTo(map);
+            
+            const contenidoPopup = `
+                <b>${estacion.nombre}</b><br>
+                <strong>Conector:</strong> ${estacion.tipoConector || 'No especificado'}<br>
+                <button class="btn-borrar" onclick="eliminarEstacion(${lat}, ${lng})">🗑️ Borrar estación</button>
+            `;
+            
+            marker.bindPopup(contenidoPopup);
+            capasMarcadores.push({ latitud: lat, longitud: lng, layer: marker });
+        }
+
+        // 3. ELIMINAR ESTACIÓN CON DOBLE CONFIRMACIÓN
+        async function eliminarEstacion(latitud, longitud) {
+            if (!confirm("¿Estás seguro de que deseas borrar esta estación?")) return;
+            if (!confirm("⚠️ CONFIRMAR BORRADO DE ESTACION")) return;
+
+            try {
+                const response = await fetch('/api/estaciones', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ latitud, longitud })
+                });
+
+                if (response.ok) {
+                    alert("Estación eliminada con éxito.");
+                    const indice = capasMarcadores.findIndex(m => m.latitud === latitud && m.longitud === longitud);
+                    if (indice !== -1) {
+                        map.removeLayer(capasMarcadores[indice].layer);
+                        capasMarcadores.splice(indice, 1);
+                    }
+                    if (routeLayer) map.removeLayer(routeLayer);
+                    document.getElementById('cardInfo').style.display = 'none';
+                    listaEstaciones = listaEstaciones.filter(e => !(parseFloat(e.latitud) === latitud && parseFloat(e.longitud) === longitud));
+                } else {
+                    alert("Error al intentar eliminar la estación.");
+                }
+            } catch (error) {
+                console.error("Error conectando con el servidor:", error);
+            }
+        }
+
+        // 4. RASTREO GPS DINÁMICO CON ÍCONO DE AUTITO 🚗
         if ("geolocation" in navigator) {
             navigator.geolocation.watchPosition(
                 (posicion) => {
                     userLat = posicion.coords.latitude;
                     userLng = posicion.coords.longitude;
 
-                    // Marcador de autito usando emoji
                     const autoIcon = L.divIcon({
                         className: 'custom-auto-icon',
                         html: '<div style="font-size: 28px; text-shadow: 0 2px 5px rgba(0,0,0,0.4);">🚗</div>',
@@ -240,7 +338,7 @@
             );
         }
 
-        // 2. CÁLCULO DE DISTANCIA DIRECTA
+        // 5. CÁLCULO DE DISTANCIA DIRECTA
         function calcularDistanciaDirecta(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -251,7 +349,7 @@
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
-        // 3. TRAZADO DE RUTA POR CALLES (OSRM)
+        // 6. TRAZADO DE RUTA POR CALLES
         async function trazarRutaCalles(originLat, originLng, destinoLat, destinoLng, nombreEstacion) {
             const url = `https://router.project-osrm.org/route/v1/driving/${originLng},${originLat};${destinoLng},${destinoLat}?overview=full&geometries=geojson`;
 
@@ -284,7 +382,7 @@
             }
         }
 
-        // 4. ACCIÓN BOTÓN: BUSCAR ESTACIÓN CERCANA
+        // 7. ACCIÓN DEL BOTÓN 🎯: BUSCAR ESTACIÓN CERCANA
         document.getElementById('btnBuscarEstacion').addEventListener('click', async () => {
             if (!userLat || !userLng) {
                 alert("Obteniendo tu ubicación GPS, aguarda un instante...");
@@ -300,8 +398,11 @@
             let menorDistancia = Infinity;
 
             listaEstaciones.forEach(estacion => {
-                if (estacion.latitud && estacion.longitud) {
-                    const dist = calcularDistanciaDirecta(userLat, userLng, estacion.latitud, estacion.longitud);
+                const lat = parseFloat(estacion.latitud);
+                const lng = parseFloat(estacion.longitud);
+
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    const dist = calcularDistanciaDirecta(userLat, userLng, lat, lng);
                     if (dist < menorDistancia) {
                         menorDistancia = dist;
                         estacionMasCercana = estacion;
@@ -310,69 +411,11 @@
             });
 
             if (estacionMasCercana) {
-                await trazarRutaCalles(userLat, userLng, estacionMasCercana.latitud, estacionMasCercana.longitud, estacionMasCercana.nombre);
+                await trazarRutaCalles(userLat, userLng, parseFloat(estacionMasCercana.latitud), parseFloat(estacionMasCercana.longitud), estacionMasCercana.nombre);
             }
         });
 
-        // 5. MANEJO DE MARCADORES Y API
-        function agregarMarcadorMapa(estacion) {
-            const marker = L.marker([estacion.latitud, estacion.longitud]).addTo(map);
-            
-            const contenidoPopup = `
-                <b>${estacion.nombre}</b><br>
-                <strong>Conector:</strong> ${estacion.tipoConector || 'No especificado'}<br>
-                <button class="btn-borrar" onclick="eliminarEstacion(${estacion.latitud}, ${estacion.longitud})">🗑️ Borrar estación</button>
-            `;
-            
-            marker.bindPopup(contenidoPopup);
-            capasMarcadores.push({ latitud: estacion.latitud, longitud: estacion.longitud, layer: marker });
-        }
-
-        async function eliminarEstacion(latitud, longitud) {
-            if (!confirm("¿Estás seguro de que deseas borrar esta estación?")) return;
-            if (!confirm("⚠️ CONFIRMAR BORRADO DE ESTACION")) return;
-
-            try {
-                const response = await fetch('/api/estaciones', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ latitud, longitud })
-                });
-
-                if (response.ok) {
-                    alert("Estación eliminada con éxito.");
-                    const indice = capasMarcadores.findIndex(m => m.latitud === latitud && m.longitud === longitud);
-                    if (indice !== -1) {
-                        map.removeLayer(capasMarcadores[indice].layer);
-                        capasMarcadores.splice(indice, 1);
-                    }
-                    if (routeLayer) map.removeLayer(routeLayer);
-                    document.getElementById('cardInfo').style.display = 'none';
-                    listaEstaciones = listaEstaciones.filter(e => !(e.latitud === latitud && e.longitud === longitud));
-                } else {
-                    alert("Error al intentar eliminar la estación.");
-                }
-            } catch (error) {
-                console.error("Error conectando con el servidor:", error);
-            }
-        }
-
-        async function cargarEstaciones() {
-            try {
-                const response = await fetch('/api/estaciones');
-                listaEstaciones = await response.json();
-
-                listaEstaciones.forEach(estacion => {
-                    if (estacion.latitud && estacion.longitud) {
-                        agregarMarcadorMapa(estacion);
-                    }
-                });
-            } catch (error) {
-                console.error("Error al cargar estaciones:", error);
-            }
-        }
-
-        // 6. FORMULARIO Y EVENTOS
+        // 8. FORMULARIO Y MODAL
         const modalForm = document.getElementById('modalForm');
 
         document.getElementById('btnAbrirForm').addEventListener('click', () => {
@@ -420,6 +463,7 @@
             }
         });
 
+        // Cargar las estaciones
         cargarEstaciones();
     </script>
 </body>
