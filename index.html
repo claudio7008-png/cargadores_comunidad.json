@@ -209,26 +209,34 @@
         let userLat = null;
         let userLng = null;
 
-        // 1. RASTREO GPS DINÁMICO
+     
+      // 4. RASTREO GPS DINÁMICO CON ÍCONO DE AUTITO
         if ("geolocation" in navigator) {
             navigator.geolocation.watchPosition(
                 (posicion) => {
                     userLat = posicion.coords.latitude;
                     userLng = posicion.coords.longitude;
 
-                    const userIcon = L.divIcon({ className: 'user-location-marker', iconSize: [18, 18] });
+                    // Marcador de autito usando emoji
+                    const autoIcon = L.divIcon({
+                        className: 'custom-auto-icon',
+                        html: '<div style="font-size: 28px; text-shadow: 0 2px 5px rgba(0,0,0,0.4);">🚗</div>',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15],
+                        popupAnchor: [0, -15]
+                    });
 
                     if (!userMarker) {
-                        userMarker = L.marker([userLat, userLng], { icon: userIcon })
+                        userMarker = L.marker([userLat, userLng], { icon: autoIcon })
                             .addTo(map)
-                            .bindPopup("<b>🚗 Tu ubicación</b>");
+                            .bindPopup("<b>Tu ubicación</b>");
                         map.setView([userLat, userLng], 14);
                     } else {
                         userMarker.setLatLng([userLat, userLng]);
                     }
                 },
                 (err) => { console.warn("Esperando GPS...", err.message); },
-                { enableHighAccuracy: false, maximumAge: 10000, timeout: 20000 }
+                { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
             );
         }
 
